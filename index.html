@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrados Release - Gestão Profissional</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #1F3BB3;
+            --secondary: #6C7383;
+            --success: #059669;
+            --danger: #F62D51;
+            --warning: #F1682C;
+            --info: #01c0c8;
+            --body-bg: #F4F5F7;
+            --sidebar-bg: #FFFFFF;
+            --border-color: #F0F0F0;
+            --card-shadow: 0px 3px 21px 0px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--body-bg);
+            color: #1F2937;
+            margin: 0;
+            overflow: hidden;
+            font-size: 12px;
+        }
+
+        /* --- Sidebar Star Admin Pro --- */
+        .sidebar {
+            width: 240px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            height: calc(100vh - 65px);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 10px 25px;
+            font-size: 12.5px;
+            color: var(--secondary);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .nav-link:hover { color: var(--primary); background-color: #F8F9FB; }
+        .nav-link.active { color: var(--primary); font-weight: 700; background-color: #F0F2FF; border-left-color: var(--primary); }
+        .nav-link i { width: 18px; margin-right: 15px; text-align: center; font-size: 15px; opacity: 0.7; }
+
+        .nav-category { padding: 25px 25px 8px; font-size: 9px; font-weight: 800; color: #B2B2B2; text-transform: uppercase; letter-spacing: 1.5px; }
+
+        /* --- Pro Elements --- */
+        .pro-card { background: #FFFFFF; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); padding: 20px; }
+        .stat-value { font-size: 22px; font-weight: 800; color: #000000; letter-spacing: -0.5px; line-height: 1.2; }
+        .stat-desc { font-size: 10px; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+
+        .chart-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #F3F4F6; transition: background-color 0.2s; }
+        .chart-row:last-child { border-bottom: none; }
+        .chart-row:hover { background-color: #FBFCFF; }
+        .chart-label { font-size: 11.5px; font-weight: 600; color: #484848; width: 170px; padding-right: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .chart-bar-container { flex: 1; height: 22px; background: #F4F5F7; border-radius: 4px; display: flex; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.02); }
+        .chart-segment { height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 9px; font-weight: 800; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        .chart-percentage { width: 55px; text-align: right; font-size: 12px; font-weight: 800; color: var(--primary); padding-left: 15px; }
+
+        table thead th { background: #FBFBFC; color: #000; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 12px 20px; border-bottom: 1px solid var(--border-color); letter-spacing: 0.5px; }
+        table tbody td { padding: 10px 20px; font-size: 12px; border-bottom: 1px solid #F8F8F8; color: #555; }
+
+        .badge-pill { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; display: inline-block; }
+        
+        /* Novas Cores de Status */
+        .st-concluido { background-color: #E8F5E9; color: #2E7D32; } /* Verde */
+        .st-andamento { background-color: #FFF3E0; color: #E65100; } /* Laranja */
+        .st-naoiniciado { background-color: #F5F5F5; color: #757575; } /* Cinza */
+        .st-erro { background-color: #FFEBEE; color: #C62828; } /* Vermelho */
+        .st-bloqueado { background-color: #E3F2FD; color: #1565C0; } /* Azul */
+
+        .form-label { font-size: 11px; font-weight: 600; color: #444; margin-bottom: 4px; display: block; }
+        .form-control { width: 100%; height: 36px; padding: 6px 12px; font-size: 12px; border: 1px solid #dee2e6; border-radius: 4px; outline: none; transition: border-color 0.2s; }
+        .form-control:focus { border-color: var(--primary); }
+
+        .btn-pro { height: 34px; padding: 0 16px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-pro-primary { background-color: var(--primary); color: white; }
+        .btn-pro-primary:hover { background-color: #162a83; }
+        .btn-pro-danger { background-color: var(--danger); color: white; }
+        .btn-pro-danger:hover { background-color: #d11e3d; }
+
+        .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .modal-overlay { background-color: rgba(0, 0, 0, 0.3); backdrop-filter: blur(3px); }
+        
+        #sync-status {
+            display: none; position: fixed; bottom: 20px; right: 20px; padding: 8px 16px; background: #fff; border-radius: 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-size: 10px; font-weight: 800; color: var(--primary); z-index: 100; border: 1px solid #eee; align-items: center;
+        }
+
+        #local-alert {
+            display: block; background: #e0f2fe; color: #0369a1; padding: 10px; text-align: center; font-size: 11px; font-weight: 700; border-bottom: 1px solid #bae6fd;
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            width: 14px;
+            height: 14px;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <div id="local-alert">
+        <i class="fas fa-info-circle mr-2"></i> MODO LOCAL ATIVO: Sincronização Cloud comentada conforme solicitado. Os dados estão a ser guardados no seu browser.
+    </div>
+
+    <div id="sync-status">
+        <i class="fas fa-sync fa-spin mr-2"></i> A PROCESSAR...
+    </div>
+
+    <!-- Header -->
+    <header class="h-[65px] bg-white border-b border-[#F0F0F0] flex items-center justify-between px-8 z-50 flex-shrink-0">
+        <div class="flex items-center space-x-10">
+            <div class="flex items-center space-x-3 cursor-pointer group" id="btn-header-home">
+                <div class="bg-[#1F3BB3] text-white p-1.5 rounded shadow-md group-hover:scale-105 transition-transform">
+                    <i class="fas fa-chart-line text-sm"></i>
+                </div>
+                <span class="text-[17px] font-black tracking-tight text-slate-800 uppercase">Integrados Release</span>
+            </div>
+            
+            <div class="hidden lg:flex flex-col border-l border-slate-100 pl-10">
+                <h1 id="header-title" class="text-[10px] font-black text-slate-800 uppercase tracking-[2px]">Dashboard</h1>
+                <p id="header-subtitle" class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Visão Analítica</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <button id="btn-export-all" class="text-[9px] font-black text-slate-500 hover:text-blue-700 transition-colors uppercase tracking-widest flex items-center border border-slate-200 px-3 py-1.5 rounded-md bg-slate-50">
+                <i class="fas fa-cloud-download-alt mr-2"></i> Exportar Tudo (Backup)
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Sidebar -->
+        <aside class="sidebar hidden md:block">
+            <div class="nav-category">Geral</div>
+            <a href="#" id="nav-dash-link" class="nav-link active">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+
+            <div class="nav-category">Módulos Release</div>
+            <nav class="space-y-0.5" id="sidebar-nav-flows">
+                <a href="#" data-flow="Saída" class="nav-link"><i class="fas fa-truck-moving"></i> Saída</a>
+                <a href="#" data-flow="Fluxo Crédito" class="nav-link"><i class="fas fa-landmark"></i> Crédito</a>
+                <a href="#" data-flow="Fluxo Contas a Receber" class="nav-link"><i class="fas fa-file-invoice-dollar"></i> Contas a Receber</a>
+                <a href="#" data-flow="Fluxo Custos" class="nav-link"><i class="fas fa-calculator"></i> Custos</a>
+                <a href="#" data-flow="Fluxo Contas a Pagar" class="nav-link"><i class="fas fa-wallet"></i> Contas a Pagar</a>
+                <a href="#" data-flow="Cenários Integrados" class="nav-link"><i class="fas fa-project-diagram"></i> Integrados</a>
+                <a href="#" data-flow="Apuração" class="nav-link"><i class="fas fa-receipt"></i> Apuração</a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto p-6 lg:p-10 bg-[#F4F5F7]">
+            
+            <!-- Dashboard Section -->
+            <section id="section-dashboard" class="space-y-8 max-w-7xl mx-auto animate-fade-in">
+                <div>
+                    <h2 class="text-xl font-black text-slate-900 tracking-tight">Status do Ciclo</h2>
+                    <p class="text-slate-500 text-[11px] mt-0.5">Consolidado operacional dos testes em execução.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="pro-card border-l-4 border-l-blue-600">
+                        <p class="stat-desc">Cenários Totais</p>
+                        <h3 class="stat-value" id="stat-total">0</h3>
+                    </div>
+                    <div class="pro-card border-l-4 border-l-emerald-500">
+                        <p class="stat-desc">Concluídos</p>
+                        <h3 class="stat-value" id="stat-validado">0</h3>
+                    </div>
+                    <div class="pro-card border-l-4 border-l-orange-500">
+                        <p class="stat-desc">Em Execução</p>
+                        <h3 class="stat-value" id="stat-andamento">0</h3>
+                    </div>
+                    <div class="pro-card border-l-4 border-l-blue-400">
+                        <p class="stat-desc">Bloqueados</p>
+                        <h3 class="stat-value" id="stat-bloqueado">0</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="pro-card">
+                        <div class="flex items-center justify-between mb-8">
+                            <h4 class="text-[12px] font-black text-slate-800 tracking-tight uppercase">Resumo Geral de Status</h4>
+                        </div>
+                        <div id="status-summary-container" class="grid grid-cols-1 md:grid-cols-5 gap-6"></div>
+                    </div>
+
+                    <div class="pro-card !p-8">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
+                            <div>
+                                <h4 class="text-[12px] font-black text-slate-800 tracking-tight uppercase">Progresso por Fluxo</h4>
+                                <p class="text-slate-400 text-[10px] font-bold mt-0.5 uppercase tracking-widest">Distribuição Proporcional</p>
+                            </div>
+                            <div class="flex flex-wrap gap-4 mt-4 md:mt-0" id="legend-placeholder">
+                                <div class="flex items-center space-x-1.5"><div class="w-2.5 h-2.5 bg-emerald-500 rounded-sm"></div><span class="text-[8px] font-bold text-slate-500 uppercase">Concluído</span></div>
+                                <div class="flex items-center space-x-1.5"><div class="w-2.5 h-2.5 bg-orange-500 rounded-sm"></div><span class="text-[8px] font-bold text-slate-500 uppercase">Em andamento</span></div>
+                                <div class="flex items-center space-x-1.5"><div class="w-2.5 h-2.5 bg-slate-400 rounded-sm"></div><span class="text-[8px] font-bold text-slate-500 uppercase">Não iniciado</span></div>
+                                <div class="flex items-center space-x-1.5"><div class="w-2.5 h-2.5 bg-rose-600 rounded-sm"></div><span class="text-[8px] font-bold text-slate-500 uppercase">Erro</span></div>
+                                <div class="flex items-center space-x-1.5"><div class="w-2.5 h-2.5 bg-blue-600 rounded-sm"></div><span class="text-[8px] font-bold text-slate-500 uppercase">Bloqueado</span></div>
+                            </div>
+                        </div>
+                        <div id="flow-analytics-container" class="mt-4"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Table Section -->
+            <section id="section-demands" class="hidden max-w-full animate-fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-xl font-black text-slate-800 tracking-tight" id="flow-title">Nome do Fluxo</h2>
+                        <p class="text-slate-400 text-[11px] mt-0.5">Gestão técnica de validações.</p>
+                    </div>
+                    <div class="flex items-center space-x-2 mt-4 md:mt-0">
+                        <button id="btn-bulk-delete" class="btn-pro btn-pro-danger hidden h-8 px-4 mr-2">
+                            <i class="fas fa-trash-alt mr-1.5"></i> Excluir Selecionados (<span id="selected-count">0</span>)
+                        </button>
+                        
+                        <button id="btn-csv-template" class="bg-white border border-slate-200 text-slate-500 h-8 px-4 rounded-md font-bold text-[9px] uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm">Modelo</button>
+                        <button id="btn-csv-import" class="bg-white border border-blue-100 text-blue-600 h-8 px-4 rounded-md font-bold text-[9px] uppercase tracking-wider hover:bg-blue-50 transition-all shadow-sm">Importar</button>
+                        <button id="btn-export-flow" class="bg-white border border-slate-200 text-slate-600 h-8 px-4 rounded-md font-bold text-[9px] uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm">Exportar CSV</button>
+                        <button id="btn-new-item" class="btn-pro btn-pro-primary h-8 px-6 shadow-lg shadow-blue-100"><i class="fas fa-plus mr-1.5"></i> Novo Item</button>
+                    </div>
+                </div>
+
+                <div class="pro-card !p-0 overflow-hidden">
+                    <div class="p-4 border-b border-slate-50 flex flex-wrap gap-4 items-center bg-white">
+                        <div class="flex-1 min-w-[250px] relative">
+                            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
+                            <input type="text" id="filter-search" placeholder="Pesquisar registros..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-lg outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all text-xs">
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <label class="text-[10px] font-bold text-slate-400 uppercase">Exibir:</label>
+                            <select id="filter-limit" class="px-3 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-slate-500 uppercase outline-none cursor-pointer border transition-all">
+                                <option value="10">10</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                                <option value="500">500</option>
+                            </select>
+                        </div>
+
+                        <select id="filter-status" class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-slate-500 uppercase outline-none cursor-pointer border transition-all">
+                            <option value="">Filtro: Status</option>
+                            <option value="Não Iniciado">Não Iniciado</option>
+                            <option value="Em Andamento">Em Andamento</option>
+                            <option value="Concluído">Concluído</option>
+                            <option value="Erro">Erro</option>
+                            <option value="Bloqueado">Bloqueado</option>
+                        </select>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full" id="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="w-12 text-center"><input type="checkbox" id="select-all-rows"></th>
+                                    <th class="w-32">ID Interno</th>
+                                    <th>Título</th>
+                                    <th class="w-40">Status</th>
+                                    <th class="w-48">Analista</th>
+                                    <th class="w-32">Evidência</th>
+                                    <th class="w-24 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body" class="bg-white"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Form -->
+    <div id="modal-form-container" class="fixed inset-0 z-[60] modal-overlay hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full flex flex-col max-h-[85vh] overflow-hidden animate-fade-in">
+            <div class="px-8 py-5 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
+                <div class="flex items-center space-x-3">
+                    <div class="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 text-base"><i class="fas fa-edit"></i></div>
+                    <div>
+                        <h3 class="text-[14px] font-black text-slate-800 tracking-tight" id="modal-title-label">Ficha de Validação</h3>
+                        <p class="text-[9px] text-blue-600 font-bold uppercase tracking-[1px] mt-0.5" id="modal-flow-label"></p>
+                    </div>
+                </div>
+                <button id="btn-close-modal" class="text-slate-300 hover:text-rose-500 border-0 bg-transparent cursor-pointer p-1"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="record-form" class="px-8 py-6 overflow-y-auto bg-white">
+                <input type="hidden" id="field-internal-id">
+                <div id="form-fields-grid" class="grid grid-cols-12 gap-x-6 gap-y-4"></div>
+                <div class="flex items-center justify-end space-x-3 mt-8 pt-6 border-t border-slate-50 sticky bottom-0 z-10 bg-white">
+                    <button type="button" id="btn-cancel-modal" class="px-6 py-2 text-[10px] font-black text-slate-400 hover:text-slate-800 uppercase tracking-widest">Descartar</button>
+                    <button type="submit" class="btn-pro btn-pro-primary h-10 px-10">Gravar Registro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+
+    <script type="module">
+        const STORAGE_KEY = 'integrados_release_pro_local_backup';
+
+        // --- ESTADO ---
+        let state = {
+            demands: [],
+            activeSection: 'dashboard',
+            activeFlow: null,
+            user: { uid: 'local-user' },
+            dbInitialized: false, 
+            selectedIds: [],
+            perPage: 10
+        };
+
+        const globalStatusOptions = ['Não Iniciado', 'Em Andamento', 'Concluído', 'Erro', 'Bloqueado'];
+        
+        const flowSchemas = {
+            'Saída': [
+                { id: 'idCenario', label: 'ID Cenário', type: 'text', col: 4, required: true, sec: 'ident' },
+                { id: 'fluxo', label: 'Fluxo', type: 'text', col: 8, required: true, sec: 'ident' },
+                { id: 'scenario', label: 'Cenário', type: 'text', col: 12, required: true, sec: 'ident' },
+                { id: 'seq', label: 'Seq.', type: 'number', col: 4, sec: 'exec' },
+                { id: 'passo', label: 'Passo', type: 'text', col: 8, required: true, sec: 'exec' },
+                { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
+                { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'pedidos', label: 'Pedidos', type: 'text', col: 12, sec: 'contr' },
+                { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
+                { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
+                { id: 'filial', label: 'Filial', type: 'text', col: 6, sec: 'cron' },
+                { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'sistema', label: 'Sistema', type: 'text', col: 6, sec: 'contr' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
+            ],
+            'Fluxo Crédito': [
+                { id: 'idCenario', label: 'ID Cenário', type: 'text', col: 4, required: true, sec: 'ident' },
+                { id: 'fluxo', label: 'Fluxo', type: 'text', col: 8, required: true, sec: 'ident' },
+                { id: 'scenario', label: 'Cenário', type: 'text', col: 12, required: true, sec: 'ident' },
+                { id: 'modulo', label: 'Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'numModulo', label: 'Número Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'passoRotina', label: 'Passo - Rotina', type: 'text', col: 12, required: true, sec: 'exec' },
+                { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
+                { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'pedidos', label: 'Pedidos', type: 'text', col: 12, sec: 'contr' },
+                { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
+                { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
+                { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'sistema', label: 'Sistema', type: 'text', col: 6, sec: 'contr' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
+            ],
+            'Fluxo Contas a Receber': [
+                { id: 'idCenario', label: 'ID Cenário', type: 'text', col: 4, required: true, sec: 'ident' },
+                { id: 'fluxo', label: 'Fluxo', type: 'text', col: 8, required: true, sec: 'ident' },
+                { id: 'scenario', label: 'Cenário', type: 'text', col: 12, required: true, sec: 'ident' },
+                { id: 'modulo', label: 'Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'numModulo', label: 'Número Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'passoRotina', label: 'Passo - Rotina', type: 'text', col: 12, required: true, sec: 'exec' },
+                { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
+                { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'pedidos', label: 'Pedidos', type: 'text', col: 12, sec: 'contr' },
+                { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
+                { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
+                { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'sistema', label: 'Sistema', type: 'text', col: 6, sec: 'contr' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
+            ],
+            'Fluxo Custos': [
+                { id: 'idCenario', label: 'ID Cenário', type: 'text', col: 4, required: true, sec: 'ident' },
+                { id: 'fluxo', label: 'Fluxo', type: 'text', col: 8, required: true, sec: 'ident' },
+                { id: 'scenario', label: 'Cenário', type: 'text', col: 12, required: true, sec: 'ident' },
+                { id: 'modulo', label: 'Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'numModulo', label: 'Número Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'passoRotina', label: 'Passo - Rotina', type: 'text', col: 12, required: true, sec: 'exec' },
+                { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
+                { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
+                { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
+                { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'sistema', label: 'Sistema', type: 'text', col: 6, sec: 'contr' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
+            ],
+            'Fluxo Contas a Pagar': [
+                { id: 'idCenario', label: 'ID Cenário', type: 'text', col: 4, required: true, sec: 'ident' },
+                { id: 'fluxo', label: 'Fluxo', type: 'text', col: 8, required: true, sec: 'ident' },
+                { id: 'scenario', label: 'Cenário', type: 'text', col: 12, required: true, sec: 'ident' },
+                { id: 'modulo', label: 'Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'numModulo', label: 'Número Módulo', type: 'text', col: 6, sec: 'exec' },
+                { id: 'passoRotina', label: 'Passo - Rotina', type: 'text', col: 12, required: true, sec: 'exec' },
+                { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
+                { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
+                { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
+                { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'sistema', label: 'Sistema', type: 'text', col: 6, sec: 'contr' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
+            ],
+            'Cenários Integrados': [
+                { id: 'idCenario', label: 'ID', type: 'text', col: 4, required: true, sec: 'ident' },
+                { id: 'fluxo', label: 'Fluxo', type: 'text', col: 8, required: true, sec: 'ident' },
+                { id: 'categoria', label: 'Categoria', type: 'text', col: 12, sec: 'ident' },
+                { id: 'scenario', label: 'Cenário', type: 'text', col: 12, required: true, sec: 'ident' },
+                { id: 'prioridade', label: 'Prioridade', type: 'select', options: ['Baixa', 'Média', 'Alta', 'Crítica'], col: 4, sec: 'exec' },
+                { id: 'complexidade', label: 'Complexidade', type: 'select', options: ['Simples', 'Média', 'Complexa'], col: 4, sec: 'exec' },
+                { id: 'massaDados', label: 'Massa de Dados', type: 'text', col: 4, sec: 'exec' },
+                { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
+                { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'inicio', label: 'Data Início', type: 'date', col: 6, sec: 'cron' },
+                { id: 'fim', label: 'Data Fim', type: 'date', col: 6, sec: 'cron' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
+            ],
+            'Apuração': [
+                { id: 'idCenario', label: 'ID Cenário', type: 'text', col: 4, required: true, sec: 'ident' },
+                { id: 'fluxo', label: 'Fluxo', type: 'text', col: 8, required: true, sec: 'ident' },
+                { id: 'scenario', label: 'Cenário', type: 'text', col: 12, required: true, sec: 'ident' },
+                { id: 'seq', label: 'Seq.', type: 'number', col: 4, sec: 'exec' },
+                { id: 'passo', label: 'Passo', type: 'text', col: 8, required: true, sec: 'exec' },
+                { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
+                { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
+                { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
+                { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
+            ]
+        };
+
+        const sectionsMap = {
+            ident: { title: 'Identificação', icon: 'fas fa-id-badge' },
+            exec: { title: 'Detalhes Técnicos', icon: 'fas fa-cog' },
+            contr: { title: 'Gestão de Status', icon: 'fas fa-user-check' },
+            cron: { title: 'Evidências & Cronograma', icon: 'fas fa-paperclip' }
+        };
+
+        // --- STORAGE FALLBACK ---
+        function loadStorage() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) state.demands = JSON.parse(saved);
+            } catch (e) { state.demands = []; }
+        }
+
+        function saveStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state.demands));
+            renderAll();
+        }
+
+        // --- STATUS HELPERS ---
+        function getStatusStandard(status) {
+            const s = (status || '').toLowerCase().trim();
+            if (s.includes('não iniciado') || s.includes('nao iniciado')) return 'Não Iniciado';
+            if (s.includes('andamento')) return 'Em Andamento';
+            if (s.includes('concluido') || s.includes('concluído')) return 'Concluído';
+            if (s.includes('erro')) return 'Erro';
+            if (s.includes('bloqueado')) return 'Bloqueado';
+            return 'Não Iniciado';
+        }
+
+        function getStatusInfo(status) {
+            const std = getStatusStandard(status);
+            switch(std) {
+                case 'Concluído': return { bg: 'bg-emerald-500', text: 'text-emerald-600', badge: 'st-concluido' };
+                case 'Em Andamento': return { bg: 'bg-orange-500', text: 'text-orange-600', badge: 'st-andamento' }; /* Laranja */
+                case 'Erro': return { bg: 'bg-rose-600', text: 'text-rose-600', badge: 'st-erro' }; /* Vermelho */
+                case 'Bloqueado': return { bg: 'bg-blue-600', text: 'text-blue-600', badge: 'st-bloqueado' }; /* Azul */
+                default: return { bg: 'bg-slate-400', text: 'text-slate-400', badge: 'st-naoiniciado' };
+            }
+        }
+
+        // --- DATE NORMALIZER ---
+        function formatDateForInput(dateStr) {
+            if (!dateStr) return '';
+            try {
+                if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) {
+                        const day = parts[0].padStart(2, '0');
+                        const month = parts[1].padStart(2, '0');
+                        const year = parts[2].split(' ')[0];
+                        return `${year}-${month}-${day}`;
+                    }
+                }
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return '';
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            } catch (e) { return ''; }
+        }
+
+        // --- UI HELPERS ---
+        function getFilteredDemands() {
+            const search = document.getElementById('filter-search')?.value.toLowerCase() || "";
+            const statusFilt = document.getElementById('filter-status')?.value || "";
+            
+            return state.demands.filter(d => {
+                const matchFlow = d.activeFlow === state.activeFlow;
+                const matchSearch = (`${d.idCenario} ${d.scenario} ${d.responsible}`).toLowerCase().includes(search);
+                const matchStatus = !statusFilt || getStatusStandard(d.status) === getStatusStandard(statusFilt);
+                return matchFlow && matchSearch && matchStatus;
+            });
+        }
+
+        function updateUI() {
+            const dashboard = document.getElementById('section-dashboard');
+            const demands = document.getElementById('section-demands');
+            if (dashboard) dashboard.classList.toggle('hidden', state.activeSection !== 'dashboard');
+            if (demands) demands.classList.toggle('hidden', state.activeSection !== 'demands');
+            
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            if(state.activeFlow) {
+                const btn = document.querySelector(`[data-flow="${state.activeFlow}"]`);
+                if(btn) btn.classList.add('active');
+            } else {
+                document.getElementById('nav-dash-link')?.classList.add('active');
+            }
+
+            if(state.activeSection === 'demands') {
+                const fTitleEl = document.getElementById('flow-title');
+                if(fTitleEl) fTitleEl.textContent = state.activeFlow;
+                document.getElementById('header-title').textContent = 'Módulos';
+                document.getElementById('header-subtitle').textContent = state.activeFlow;
+                state.selectedIds = [];
+                const selectAll = document.getElementById('select-all-rows');
+                if(selectAll) selectAll.checked = false;
+                updateBulkButton();
+            } else {
+                document.getElementById('header-title').textContent = 'Dashboard';
+                document.getElementById('header-subtitle').textContent = 'Visão Analítica';
+            }
+            renderAll();
+        }
+
+        function renderAll() {
+            if(state.activeSection === 'dashboard') renderDashboard();
+            else renderTable();
+        }
+
+        function renderDashboard() {
+            const total = state.demands.length;
+            const counts = {
+                total,
+                concluido: state.demands.filter(d => getStatusStandard(d.status) === 'Concluído').length,
+                andamento: state.demands.filter(d => getStatusStandard(d.status) === 'Em Andamento').length,
+                bloqueado: state.demands.filter(d => getStatusStandard(d.status) === 'Bloqueado').length
+            };
+            
+            document.getElementById('stat-total').innerText = counts.total;
+            document.getElementById('stat-validado').innerText = counts.concluido;
+            document.getElementById('stat-andamento').innerText = counts.andamento;
+            document.getElementById('stat-bloqueado').innerText = counts.bloqueado;
+
+            const summaryCont = document.getElementById('status-summary-container');
+            if(summaryCont) {
+                summaryCont.innerHTML = '';
+                globalStatusOptions.forEach(status => {
+                    const count = state.demands.filter(d => getStatusStandard(d.status) === status).length;
+                    const perc = total > 0 ? Math.round((count / total) * 100) : 0;
+                    const color = getStatusInfo(status);
+                    summaryCont.insertAdjacentHTML('beforeend', `
+                        <div class="flex flex-col space-y-1.5 border-r border-slate-50 last:border-0 pr-4">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">${status}</span>
+                                <span class="text-[10px] font-black ${color.text}">${perc}%</span>
+                            </div>
+                            <div class="text-xl font-extrabold text-slate-900">${count}</div>
+                            <div class="w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+                                <div class="h-full rounded-full ${color.bg}" style="width: ${perc}%"></div>
+                            </div>
+                        </div>
+                    `);
+                });
+            }
+
+            const flowCont = document.getElementById('flow-analytics-container');
+            if(flowCont) {
+                flowCont.innerHTML = '';
+                Object.keys(flowSchemas).forEach(flow => {
+                    const flowData = state.demands.filter(d => d.activeFlow === flow);
+                    const flowTotal = flowData.length;
+                    const flowVal = flowData.filter(d => getStatusStandard(d.status) === 'Concluído').length;
+                    const flowPerc = flowTotal ? Math.round((flowVal / flowTotal) * 100) : 0;
+                    let segments = '';
+                    if(flowTotal > 0) {
+                        globalStatusOptions.forEach(st => {
+                            const sCount = flowData.filter(d => getStatusStandard(d.status) === st).length;
+                            if(sCount > 0) {
+                                const sPerc = (sCount / flowTotal) * 100;
+                                const color = getStatusInfo(st);
+                                segments += `<div class="chart-segment ${color.bg}" style="width: ${sPerc}%">${sCount}</div>`;
+                            }
+                        });
+                    } else {
+                        segments = `<div class="w-full h-full flex items-center justify-center text-[9px] text-slate-300 font-bold italic">Sem dados</div>`;
+                    }
+                    flowCont.insertAdjacentHTML('beforeend', `
+                        <div class="chart-row">
+                            <span class="chart-label">${flow}</span>
+                            <div class="chart-bar-container">${segments}</div>
+                            <span class="chart-percentage">${flowPerc}%</span>
+                        </div>
+                    `);
+                });
+            }
+        }
+
+        function renderTable() {
+            const filtered = getFilteredDemands();
+            const paginated = filtered.slice(0, state.perPage);
+            
+            const tbody = document.getElementById('table-body');
+            if (tbody) {
+                tbody.innerHTML = paginated.length ? paginated.map(d => {
+                    const clr = getStatusInfo(d.status);
+                    const isChecked = state.selectedIds.includes(d.internalId);
+                    
+                    const evidenciaContent = (d.evidencia && d.evidencia.trim() !== "") 
+                        ? `<a href="${d.evidencia.startsWith('http') ? d.evidencia : 'http://' + d.evidencia}" target="_blank" class="text-blue-600 font-bold hover:underline flex items-center">
+                             <i class="fas fa-external-link-alt mr-1.5 text-[10px]"></i> Abrir
+                           </a>`
+                        : `<span class="text-slate-300 italic">Pendente</span>`;
+
+                    return `
+                    <tr class="hover:bg-slate-50 transition-all">
+                        <td class="text-center"><input type="checkbox" class="row-checkbox" data-id="${d.internalId}" ${isChecked ? 'checked' : ''}></td>
+                        <td class="font-black text-blue-800">${d.idCenario || '-'}</td>
+                        <td class="font-semibold text-slate-700">${d.scenario || 'Sem título'}</td>
+                        <td><span class="badge-pill ${clr.badge}">${getStatusStandard(d.status)}</span></td>
+                        <td class="font-bold text-slate-500">${d.responsible || '-'}</td>
+                        <td>${evidenciaContent}</td>
+                        <td class="text-right">
+                            <div class="flex justify-end space-x-1">
+                                <button class="btn-edit-rec w-8 h-8 flex items-center justify-center text-blue-400 hover:text-blue-700" data-id="${d.internalId}"><i class="fas fa-edit"></i></button>
+                                <button class="btn-delete-rec w-8 h-8 flex items-center justify-center text-rose-300 hover:text-rose-600" data-id="${d.internalId}"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </td>
+                    </tr>`;
+                }).join('') : '<tr><td colspan="7" class="text-center py-20 text-slate-300 font-bold text-[10px]">Sem dados</td></tr>';
+
+                tbody.querySelectorAll('.btn-edit-rec').forEach(b => b.onclick = () => editRecord(b.dataset.id));
+                tbody.querySelectorAll('.btn-delete-rec').forEach(b => b.onclick = () => performDelete([b.dataset.id]));
+                
+                tbody.querySelectorAll('.row-checkbox').forEach(cb => {
+                    cb.onchange = (e) => {
+                        const id = e.target.dataset.id;
+                        if(e.target.checked) {
+                            if(!state.selectedIds.includes(id)) state.selectedIds.push(id);
+                        } else {
+                            state.selectedIds = state.selectedIds.filter(x => x !== id);
+                            const selectAll = document.getElementById('select-all-rows');
+                            if(selectAll) selectAll.checked = false;
+                        }
+                        updateBulkButton();
+                    };
+                });
+            }
+        }
+
+        function updateBulkButton() {
+            const btn = document.getElementById('btn-bulk-delete');
+            const countSpan = document.getElementById('selected-count');
+            if(!btn || !countSpan) return;
+            if(state.selectedIds.length > 0) {
+                btn.classList.remove('hidden');
+                countSpan.innerText = state.selectedIds.length;
+            } else {
+                btn.classList.add('hidden');
+            }
+        }
+
+        async function saveRecord(data) {
+            const sync = document.getElementById('sync-status');
+            if(sync) sync.style.display = 'flex';
+            const docId = data.internalId || crypto.randomUUID();
+            
+            if(data.status) {
+                data.status = getStatusStandard(data.status);
+            }
+
+            const payload = { ...data }; delete payload.internalId;
+            const idx = state.demands.findIndex(x => x.internalId === docId);
+            const full = { internalId: docId, ...payload };
+            if(idx !== -1) state.demands[idx] = full; else state.demands.push(full);
+            saveStorage();
+            if(sync) sync.style.display = 'none';
+        }
+
+        async function performDelete(idList) {
+            if (idList.length === 0) return;
+            if (idList.length === 1 && !confirm('Deseja eliminar este registro?')) return;
+            if (idList.length > 1 && !confirm(`Deseja eliminar os ${idList.length} registros selecionados?`)) return;
+
+            const sync = document.getElementById('sync-status');
+            if(sync) sync.style.display = 'flex';
+
+            state.demands = state.demands.filter(d => !idList.includes(d.internalId));
+            state.selectedIds = state.selectedIds.filter(id => !idList.includes(id));
+            
+            saveStorage();
+            updateBulkButton();
+
+            if(idList.length > 1) {
+                 const selectAll = document.getElementById('select-all-rows');
+                 if(selectAll) selectAll.checked = false;
+            }
+            if(sync) sync.style.display = 'none';
+        }
+
+        function editRecord(id) {
+            const d = state.demands.find(x => x.internalId === id);
+            if(!d) return;
+            document.getElementById('field-internal-id').value = d.internalId;
+            renderFormFields(d.activeFlow, d);
+            document.getElementById('modal-title-label').innerText = 'Editar Registro';
+            document.getElementById('modal-flow-label').textContent = d.activeFlow;
+            document.getElementById('modal-form-container')?.classList.remove('hidden');
+        }
+
+        function renderFormFields(flow, data = {}) {
+            const cont = document.getElementById('form-fields-grid');
+            const schema = flowSchemas[flow];
+            if(!cont || !schema) return;
+            cont.innerHTML = '';
+            const uniqueSections = [...new Set(schema.map(f => f.sec))];
+            uniqueSections.forEach(sk => {
+                cont.insertAdjacentHTML('beforeend', `<div class="col-span-12 py-1 border-b border-slate-50 mt-2 mb-1"><span class="text-[9px] font-black text-slate-700 uppercase tracking-widest">${sectionsMap[sk]?.title || 'CAMPOS'}</span></div>`);
+                schema.filter(f => f.sec === sk).forEach(fd => {
+                    let rawVal = data[fd.id] || (fd.id === 'status' ? 'Não Iniciado' : (fd.id === 'fluxo' ? state.activeFlow : ''));
+                    let val = rawVal;
+                    
+                    if (fd.id === 'status') val = getStatusStandard(rawVal);
+                    if (fd.type === 'date') val = formatDateForInput(rawVal);
+
+                    const input = fd.type === 'select' ? `<select id="fld-${fd.id}" class="form-control font-semibold">${fd.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>` : fd.type === 'textarea' ? `<textarea id="fld-${fd.id}" rows="2" class="form-control !h-auto">${val}</textarea>` : `<input type="${fd.type}" id="fld-${fd.id}" value="${val}" class="form-control font-semibold">`;
+                    cont.insertAdjacentHTML('beforeend', `<div class="col-span-12 md:col-span-${fd.col}"><label class="form-label">${fd.label}</label>${input}</div>`);
+                });
+            });
+        }
+
+        function parseCSVLine(line, delimiter) {
+            const result = [];
+            let start = 0;
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                if (line[i] === '"') {
+                    inQuotes = !inQuotes;
+                } else if (line[i] === delimiter && !inQuotes) {
+                    result.push(line.substring(start, i).replace(/^"|"$/g, '').replace(/""/g, '"'));
+                    start = i + 1;
+                }
+            }
+            result.push(line.substring(start).replace(/^"|"$/g, '').replace(/""/g, '"'));
+            return result;
+        }
+
+        function generateCSV(headers, data) {
+            const bom = "\uFEFF";
+            const csvRows = [headers.join(";")];
+            data.forEach(row => {
+                const values = headers.map(header => {
+                    let val = row[header] || "";
+                    return `"${val.toString().replace(/"/g, '""')}"`;
+                });
+                csvRows.push(values.join(";"));
+            });
+            return bom + csvRows.join("\n");
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            loadStorage();
+            updateUI();
+
+            const bindClick = (id, fn) => {
+                const el = document.getElementById(id);
+                if (el) el.onclick = fn;
+            };
+
+            bindClick('btn-header-home', () => { state.activeSection = 'dashboard'; state.activeFlow = null; updateUI(); });
+            bindClick('nav-dash-link', () => { state.activeSection = 'dashboard'; state.activeFlow = null; updateUI(); });
+            bindClick('btn-close-modal', () => document.getElementById('modal-form-container')?.classList.add('hidden'));
+            bindClick('btn-cancel-modal', () => document.getElementById('modal-form-container')?.classList.add('hidden'));
+            bindClick('btn-bulk-delete', () => performDelete(state.selectedIds));
+            
+            const searchF = document.getElementById('filter-search');
+            if (searchF) searchF.oninput = renderTable;
+            const statusF = document.getElementById('filter-status');
+            if (statusF) statusF.onchange = renderTable;
+
+            const limitF = document.getElementById('filter-limit');
+            if (limitF) {
+                limitF.onchange = (e) => {
+                    state.perPage = parseInt(e.target.value);
+                    renderTable();
+                };
+            }
+
+            const selectAll = document.getElementById('select-all-rows');
+            if (selectAll) {
+                selectAll.onchange = (e) => {
+                    const filtered = getFilteredDemands();
+                    const visibleInTable = filtered.slice(0, state.perPage);
+                    if(e.target.checked) {
+                        visibleInTable.forEach(d => { if(!state.selectedIds.includes(d.internalId)) state.selectedIds.push(d.internalId); });
+                    } else {
+                        const visibleIds = visibleInTable.map(d => d.internalId);
+                        state.selectedIds = state.selectedIds.filter(id => !visibleIds.includes(id));
+                    }
+                    renderTable();
+                    updateBulkButton();
+                };
+            }
+
+            document.querySelectorAll('#sidebar-nav-flows a').forEach(a => {
+                a.onclick = (e) => { e.preventDefault(); state.activeSection = 'demands'; state.activeFlow = a.dataset.flow; updateUI(); };
+            });
+
+            bindClick('btn-new-item', () => {
+                document.getElementById('record-form')?.reset();
+                const fieldId = document.getElementById('field-internal-id');
+                if(fieldId) fieldId.value = '';
+                renderFormFields(state.activeFlow, { fluxo: state.activeFlow });
+                document.getElementById('modal-title-label').innerText = 'Nova Entrada';
+                document.getElementById('modal-flow-label').textContent = state.activeFlow;
+                document.getElementById('modal-form-container')?.classList.remove('hidden');
+            });
+
+            const recForm = document.getElementById('record-form');
+            if (recForm) {
+                recForm.onsubmit = async (e) => {
+                    e.preventDefault();
+                    const id = document.getElementById('field-internal-id').value;
+                    const flow = state.activeFlow || state.demands.find(x => x.internalId === id)?.activeFlow;
+                    const schema = flowSchemas[flow];
+                    const data = { internalId: id || null, activeFlow: flow, updatedAt: new Date().toISOString() };
+                    schema.forEach(f => { 
+                        const el = document.getElementById(`fld-${f.id}`); 
+                        if(el) data[f.id] = el.value; 
+                    });
+                    await saveRecord(data);
+                    document.getElementById('modal-form-container')?.classList.add('hidden');
+                };
+            }
+
+            bindClick('btn-export-all', () => {
+                if(!state.demands.length) return;
+                const headers = ["idCenario", "scenario", "status", "responsible", "activeFlow", "updatedAt"];
+                const csv = generateCSV(headers, state.demands);
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+                link.download = `backup_completo_release.csv`; link.click();
+            });
+
+            bindClick('btn-csv-template', () => {
+                const schema = flowSchemas[state.activeFlow];
+                if (!schema) return;
+                const headers = schema.map(f => f.label);
+                const csv = "\uFEFF" + headers.join(";") + "\n";
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+                link.download = `template_${state.activeFlow.replace(/ /g, '_')}.csv`; link.click();
+            });
+
+            bindClick('btn-export-flow', () => {
+                const flowData = state.demands.filter(d => d.activeFlow === state.activeFlow);
+                if(!flowData.length) return;
+                const schema = flowSchemas[state.activeFlow];
+                const headers = schema.map(f => f.label);
+                const mappedData = flowData.map(d => {
+                    const row = {};
+                    schema.forEach(f => { 
+                        let val = d[f.id] || "";
+                        if (f.id === 'status') val = getStatusStandard(val);
+                        if (f.type === 'date' && val) {
+                            const dParts = val.split('-');
+                            if (dParts.length === 3) val = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
+                        }
+                        row[f.label] = val; 
+                    });
+                    return row;
+                });
+                const csv = generateCSV(headers, mappedData);
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8;'}));
+                link.download = `export_${state.activeFlow.replace(/ /g, '_')}.csv`; link.click();
+            });
+
+            const btnImp = document.getElementById('btn-csv-import');
+            const csvInp = document.getElementById('csv-file-input');
+            if(btnImp && csvInp) {
+                btnImp.onclick = () => csvInp.click();
+                csvInp.onchange = (e) => {
+                    const file = e.target.files[0]; if(!file) return;
+                    const reader = new FileReader();
+                    reader.onload = async (ev) => {
+                        const content = ev.target.result;
+                        const rows = content.split(/\r?\n/);
+                        if(rows.length < 2) return;
+                        
+                        const header = rows[0];
+                        const delimiter = header.includes(';') ? ';' : ',';
+                        const schema = flowSchemas[state.activeFlow];
+                        
+                        for (let i = 1; i < rows.length; i++) {
+                            const line = rows[i].trim();
+                            if(!line) continue;
+                            
+                            const cleanCols = parseCSVLine(line, delimiter);
+                            const record = { activeFlow: state.activeFlow, updatedAt: new Date().toISOString() };
+                            schema.forEach((f, idx) => { 
+                                let val = cleanCols[idx] || '';
+                                if (f.id === 'status') val = getStatusStandard(val);
+                                if (f.type === 'date' && val) val = formatDateForInput(val);
+                                record[f.id] = val; 
+                            });
+                            await saveRecord(record);
+                        }
+                    };
+                    reader.readAsText(file, 'ISO-8859-1'); e.target.value = '';
+                };
+            }
+        });
+    </script>
+</body>
+</html>
