@@ -78,7 +78,7 @@
 
         .badge-pill { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; display: inline-block; }
         
-        /* Novas Cores de Status */
+        /* Cores de Status */
         .st-concluido { background-color: #E8F5E9; color: #2E7D32; } /* Verde */
         .st-andamento { background-color: #FFF3E0; color: #E65100; } /* Laranja */
         .st-naoiniciado { background-color: #F5F5F5; color: #757575; } /* Cinza */
@@ -105,7 +105,7 @@
         }
 
         #local-alert {
-            display: block; background: #e0f2fe; color: #0369a1; padding: 10px; text-align: center; font-size: 11px; font-weight: 700; border-bottom: 1px solid #bae6fd;
+            display: none; background: #e0f2fe; color: #0369a1; padding: 10px; text-align: center; font-size: 11px; font-weight: 700; border-bottom: 1px solid #bae6fd;
         }
 
         /* Checkbox styling */
@@ -119,9 +119,11 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <div id="local-alert">
+    <!-- COMENTADO CONFORME SOLICITADO: Aviso de Modo Local
+    <div id="local-alert" style="display: block;">
         <i class="fas fa-info-circle mr-2"></i> MODO LOCAL ATIVO: Sincronização Cloud comentada conforme solicitado. Os dados estão a ser guardados no seu browser.
     </div>
+    -->
 
     <div id="sync-status">
         <i class="fas fa-sync fa-spin mr-2"></i> A PROCESSAR...
@@ -479,9 +481,9 @@
             const std = getStatusStandard(status);
             switch(std) {
                 case 'Concluído': return { bg: 'bg-emerald-500', text: 'text-emerald-600', badge: 'st-concluido' };
-                case 'Em Andamento': return { bg: 'bg-orange-500', text: 'text-orange-600', badge: 'st-andamento' }; /* Laranja */
-                case 'Erro': return { bg: 'bg-rose-600', text: 'text-rose-600', badge: 'st-erro' }; /* Vermelho */
-                case 'Bloqueado': return { bg: 'bg-blue-600', text: 'text-blue-600', badge: 'st-bloqueado' }; /* Azul */
+                case 'Em Andamento': return { bg: 'bg-orange-500', text: 'text-orange-600', badge: 'st-andamento' };
+                case 'Erro': return { bg: 'bg-rose-600', text: 'text-rose-600', badge: 'st-erro' };
+                case 'Bloqueado': return { bg: 'bg-blue-600', text: 'text-blue-600', badge: 'st-bloqueado' };
                 default: return { bg: 'bg-slate-400', text: 'text-slate-400', badge: 'st-naoiniciado' };
             }
         }
