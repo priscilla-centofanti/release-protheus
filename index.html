@@ -78,7 +78,7 @@
 
         .badge-pill { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; display: inline-block; }
         
-        /* Cores de Status Actualizadas */
+        /* Cores de Status Atualizadas */
         .st-concluido { background-color: #E8F5E9; color: #2E7D32; } /* Verde */
         .st-andamento { background-color: #FFF3E0; color: #E65100; } /* Laranja */
         .st-naoiniciado { background-color: #F5F5F5; color: #757575; } /* Cinza */
@@ -419,6 +419,7 @@
                 { id: 'passoRotina', label: 'Passo - Rotina', type: 'text', col: 12, required: true, sec: 'exec' },
                 { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
                 { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'pedidos', label: 'Pedidos', type: 'text', col: 12, sec: 'contr' },
                 { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
                 { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
                 { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
@@ -434,6 +435,7 @@
                 { id: 'passoRotina', label: 'Passo - Rotina', type: 'text', col: 12, required: true, sec: 'exec' },
                 { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
                 { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'pedidos', label: 'Pedidos', type: 'text', col: 12, sec: 'contr' },
                 { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
                 { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
                 { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
@@ -520,10 +522,10 @@
             renderAll();
         }
 
-        // --- HELPERS DE STATUS E INTEGRIDADE ---
-        function isRecordValid(d) {
-            // Qualquer registo que tenha um fluxo atribuído é considerado para contagem (sem filtros restritivos)
-            return !!d.activeFlow;
+        // --- HELPERS DE STATUS E FLUXO ---
+        function getFlowName(d) {
+            // Verifica tanto activeFlow como fluxo para garantir compatibilidade com dados antigos/importados
+            return (d.activeFlow || d.fluxo || '').trim();
         }
 
         function getStatusStandard(status) {
@@ -570,7 +572,9 @@
             const search = document.getElementById('filter-search')?.value.toLowerCase() || "";
             const statusFilt = document.getElementById('filter-status')?.value || "";
             return state.demands.filter(d => {
-                if (!d.activeFlow || d.activeFlow !== state.activeFlow) return false;
+                const fName = getFlowName(d);
+                if (!fName || fName.toLowerCase() !== state.activeFlow.toLowerCase()) return false;
+                
                 const matchSearch = (`${d.idCenario} ${d.scenario} ${d.responsible}`).toLowerCase().includes(search);
                 const matchStatus = !statusFilt || getStatusStandard(d.status) === getStatusStandard(statusFilt);
                 return matchSearch && matchStatus;
@@ -586,7 +590,7 @@
             
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             if(state.activeFlow) {
-                const btn = document.querySelector(`[data-flow="${state.activeFlow}"]`);
+                const btn = Array.from(document.querySelectorAll('.nav-link')).find(el => el.getAttribute('data-flow')?.toLowerCase() === state.activeFlow.toLowerCase());
                 if(btn) btn.classList.add('active');
             } else {
                 const dashLink = document.getElementById('nav-dash-link');
@@ -619,8 +623,8 @@
         }
 
         function renderDashboard() {
-            // Contagem absoluta de todos os registos vinculados a fluxos (sem filtros de integridade que possam ocultar dados)
-            const allItems = state.demands.filter(d => !!d.activeFlow);
+            // Contagem absoluta de todos os registos vinculados a fluxos
+            const allItems = state.demands.filter(d => !!getFlowName(d));
             const totalCount = allItems.length;
             
             const counts = {
@@ -668,7 +672,7 @@
             if(flowCont) {
                 flowCont.innerHTML = '';
                 Object.keys(flowSchemas).forEach(flowKey => {
-                    const currentFlowData = allItems.filter(d => d.activeFlow === flowKey);
+                    const currentFlowData = allItems.filter(d => getFlowName(d).toLowerCase() === flowKey.toLowerCase());
                     const flowTotal = currentFlowData.length;
                     let segments = '';
                     
@@ -839,12 +843,12 @@
             if(!d) return;
             const fieldId = document.getElementById('field-internal-id');
             if(fieldId) fieldId.value = d.internalId;
-            renderFormFields(d.activeFlow, d);
+            renderFormFields(getFlowName(d), d);
             const mTitle = document.getElementById('modal-title-label');
             const mFlow = document.getElementById('modal-flow-label');
             const mCont = document.getElementById('modal-form-container');
             if(mTitle) mTitle.innerText = 'Editar Registro';
-            if(mFlow) mFlow.textContent = d.activeFlow;
+            if(mFlow) mFlow.textContent = getFlowName(d);
             if(mCont) mCont.classList.remove('hidden');
         }
 
@@ -918,10 +922,10 @@
             bindClick('btn-bulk-delete', () => performDelete(state.selectedIds));
             
             bindClick('btn-clear-flow', async () => {
-                const count = state.demands.filter(d => d.activeFlow === state.activeFlow).length;
+                const count = state.demands.filter(d => getFlowName(d).toLowerCase() === state.activeFlow.toLowerCase()).length;
                 if (count === 0) return;
                 if (confirm(`Atenção: Deseja eliminar permanentemente os ${count} registos do fluxo "${state.activeFlow}"?`)) {
-                    const ids = state.demands.filter(d => d.activeFlow === state.activeFlow).map(d => d.internalId);
+                    const ids = state.demands.filter(d => getFlowName(d).toLowerCase() === state.activeFlow.toLowerCase()).map(d => d.internalId);
                     await performDelete(ids);
                 }
             });
@@ -974,7 +978,7 @@
                 recForm.onsubmit = async (e) => {
                     e.preventDefault();
                     const idVal = document.getElementById('field-internal-id').value;
-                    const flow = state.activeFlow || state.demands.find(x => x.internalId === idVal)?.activeFlow;
+                    const flow = state.activeFlow || getFlowName(state.demands.find(x => x.internalId === idVal));
                     const schema = flowSchemas[flow];
                     const data = { internalId: idVal || null, activeFlow: flow, updatedAt: new Date().toISOString() };
                     schema.forEach(f => { 
@@ -1007,7 +1011,7 @@
             });
 
             bindClick('btn-export-flow', () => {
-                const flowData = state.demands.filter(d => d.activeFlow === state.activeFlow);
+                const flowData = state.demands.filter(d => getFlowName(d).toLowerCase() === state.activeFlow.toLowerCase());
                 if(!flowData.length) return;
                 const schema = flowSchemas[state.activeFlow];
                 const headers = schema.map(f => f.label);
