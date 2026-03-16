@@ -78,7 +78,7 @@
 
         .badge-pill { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; display: inline-block; }
         
-        /* Cores de Status Atualizadas */
+        /* Cores de Status Actualizadas */
         .st-concluido { background-color: #E8F5E9; color: #2E7D32; } /* Verde */
         .st-andamento { background-color: #FFF3E0; color: #E65100; } /* Laranja */
         .st-naoiniciado { background-color: #F5F5F5; color: #757575; } /* Cinza */
@@ -108,7 +108,6 @@
             display: none; background: #e0f2fe; color: #0369a1; padding: 10px; text-align: center; font-size: 11px; font-weight: 700; border-bottom: 1px solid #bae6fd;
         }
 
-        /* Checkbox styling */
         input[type="checkbox"] {
             width: 14px;
             height: 14px;
@@ -119,13 +118,12 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <!-- Banner de Alerta para falha de conexão -->
     <div id="local-alert">
         <i class="fas fa-info-circle mr-2"></i> MODO LOCAL: A sincronização falhou ou não está configurada. Os dados estão guardados no browser.
     </div>
 
     <div id="sync-status">
-        <i class="fas fa-sync fa-spin mr-2"></i> SINCRONIZANDO...
+        <i class="fas fa-sync fa-spin mr-2"></i> A PROCESSAR...
     </div>
 
     <!-- Cabeçalho -->
@@ -197,7 +195,7 @@
                         <p class="stat-desc">Em Execução</p>
                         <h3 class="stat-value" id="stat-andamento">0</h3>
                     </div>
-                    <div class="pro-card border-l-4 border-l-blue-400">
+                    <div class="pro-card border-l-4 border-l-blue-600">
                         <p class="stat-desc">Bloqueados</p>
                         <h3 class="stat-value" id="stat-bloqueado">0</h3>
                     </div>
@@ -233,9 +231,11 @@
             <!-- Secção Tabela -->
             <section id="section-demands" class="hidden max-w-full animate-fade-in">
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
-                    <div>
+                    <div class="flex items-center space-x-4">
                         <h2 class="text-xl font-black text-slate-800 tracking-tight" id="flow-title">Nome do Fluxo</h2>
-                        <p class="text-slate-400 text-[11px] mt-0.5">Gestão técnica de validações.</p>
+                        <button id="btn-clear-flow" title="Limpar todos os registos deste fluxo" class="text-slate-300 hover:text-rose-500 transition-colors">
+                            <i class="fas fa-broom"></i>
+                        </button>
                     </div>
                     <div class="flex items-center space-x-2 mt-4 md:mt-0">
                         <button id="btn-bulk-delete" class="btn-pro btn-pro-danger hidden h-8 px-4 mr-2">
@@ -269,8 +269,8 @@
 
                         <select id="filter-status" class="px-4 py-2 bg-slate-50 border border-slate-100 rounded-lg text-[10px] font-bold text-slate-500 uppercase outline-none cursor-pointer border transition-all">
                             <option value="">Filtro: Status</option>
-                            <option value="Não Iniciado">Não Iniciado</option>
-                            <option value="Em Andamento">Em Andamento</option>
+                            <option value="Não iniciado">Não iniciado</option>
+                            <option value="Em andamento">Em andamento</option>
                             <option value="Concluído">Concluído</option>
                             <option value="Erro">Erro</option>
                             <option value="Bloqueado">Bloqueado</option>
@@ -325,10 +325,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO FIREBASE ---
+        // --- CONFIGURAÇÃO ---
         const firebaseConfig = {
             apiKey: "AIzaSyAYpZqV0SGCCy-3EqQhsOWwxFZkEOYm1W8",
             authDomain: "release-protheus.firebaseapp.com",
@@ -340,15 +340,13 @@
 
         const currentAppId = 'release-protheus';
         const STORAGE_KEY = 'integrados_release_pro_local_backup';
-        const MANUAL_UID = "g6Cmhj5X36W0WyBgJwoScIiUKaE3";
 
-        // Inicializa serviços
         let app, auth, db;
         try {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-        } catch(e) { console.error("Erro na inicialização do Firebase", e); }
+        } catch(e) { console.error("Firebase init error", e); }
 
         // --- ESTADO ---
         let state = {
@@ -361,7 +359,7 @@
             perPage: 10
         };
 
-        const globalStatusOptions = ['Não Iniciado', 'Em Andamento', 'Concluído', 'Erro', 'Bloqueado'];
+        const globalStatusOptions = ['Não iniciado', 'Em andamento', 'Concluído', 'Erro', 'Bloqueado'];
         
         const flowSchemas = {
             'Saída': [
@@ -494,9 +492,11 @@
                 { id: 'passo', label: 'Passo', type: 'text', col: 8, required: true, sec: 'exec' },
                 { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
                 { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
+                { id: 'pedidos', label: 'Pedidos', type: 'text', col: 12, sec: 'contr' },
                 { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
                 { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
                 { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
+                { id: 'sistema', label: 'Sistema', type: 'text', col: 6, sec: 'contr' },
                 { id: 'observacoes', label: 'Observações', type: 'textarea', col: 12, sec: 'cron' }
             ]
         };
@@ -508,7 +508,6 @@
             cron: { title: 'Evidências & Cronograma', icon: 'fas fa-paperclip' }
         };
 
-        // --- STORAGE FALLBACK ---
         function loadStorage() {
             try {
                 const saved = localStorage.getItem(STORAGE_KEY);
@@ -521,22 +520,27 @@
             renderAll();
         }
 
-        // --- HELPERS ---
+        // --- HELPERS DE STATUS E INTEGRIDADE ---
+        function isRecordValid(d) {
+            // Qualquer registo que tenha um fluxo atribuído é considerado para contagem (sem filtros restritivos)
+            return !!d.activeFlow;
+        }
+
         function getStatusStandard(status) {
             const s = (status || '').toLowerCase().trim();
-            if (s.includes('não iniciado') || s.includes('nao iniciado')) return 'Não Iniciado';
-            if (s.includes('andamento')) return 'Em Andamento';
+            if (s.includes('não iniciado') || s.includes('nao iniciado') || s === "") return 'Não iniciado';
+            if (s.includes('em andamento') || s.includes('andamento')) return 'Em andamento';
             if (s.includes('concluido') || s.includes('concluído')) return 'Concluído';
             if (s.includes('erro')) return 'Erro';
             if (s.includes('bloqueado')) return 'Bloqueado';
-            return 'Não Iniciado';
+            return 'Não iniciado';
         }
 
         function getStatusInfo(status) {
             const std = getStatusStandard(status);
             switch(std) {
                 case 'Concluído': return { bg: 'bg-emerald-500', text: 'text-emerald-600', badge: 'st-concluido' };
-                case 'Em Andamento': return { bg: 'bg-orange-500', text: 'text-orange-600', badge: 'st-andamento' };
+                case 'Em andamento': return { bg: 'bg-orange-500', text: 'text-orange-600', badge: 'st-andamento' };
                 case 'Erro': return { bg: 'bg-rose-600', text: 'text-rose-600', badge: 'st-erro' };
                 case 'Bloqueado': return { bg: 'bg-blue-600', text: 'text-blue-600', badge: 'st-bloqueado' };
                 default: return { bg: 'bg-slate-400', text: 'text-slate-400', badge: 'st-naoiniciado' };
@@ -558,10 +562,7 @@
                 }
                 const d = new Date(dateStr);
                 if (isNaN(d.getTime())) return '';
-                const year = d.getFullYear();
-                const month = String(d.getMonth() + 1).padStart(2, '0');
-                const day = String(d.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
+                return d.toISOString().split('T')[0];
             } catch (e) { return ''; }
         }
 
@@ -569,10 +570,10 @@
             const search = document.getElementById('filter-search')?.value.toLowerCase() || "";
             const statusFilt = document.getElementById('filter-status')?.value || "";
             return state.demands.filter(d => {
-                const matchFlow = d.activeFlow === state.activeFlow;
+                if (!d.activeFlow || d.activeFlow !== state.activeFlow) return false;
                 const matchSearch = (`${d.idCenario} ${d.scenario} ${d.responsible}`).toLowerCase().includes(search);
                 const matchStatus = !statusFilt || getStatusStandard(d.status) === getStatusStandard(statusFilt);
-                return matchFlow && matchSearch && matchStatus;
+                return matchSearch && matchStatus;
             });
         }
 
@@ -592,11 +593,10 @@
                 if(dashLink) dashLink.classList.add('active');
             }
 
-            const hTitle = document.getElementById('header-title');
-            const hSub = document.getElementById('header-subtitle');
-            const fTitle = document.getElementById('flow-title');
-
             if(state.activeSection === 'demands') {
+                const fTitle = document.getElementById('flow-title');
+                const hTitle = document.getElementById('header-title');
+                const hSub = document.getElementById('header-subtitle');
                 if(fTitle) fTitle.textContent = state.activeFlow;
                 if(hTitle) hTitle.textContent = 'Módulos';
                 if(hSub) hSub.textContent = state.activeFlow;
@@ -605,6 +605,8 @@
                 if(selectAll) selectAll.checked = false;
                 updateBulkButton();
             } else {
+                const hTitle = document.getElementById('header-title');
+                const hSub = document.getElementById('header-subtitle');
                 if(hTitle) hTitle.textContent = 'Dashboard';
                 if(hSub) hSub.textContent = 'Visão Analítica';
             }
@@ -617,12 +619,15 @@
         }
 
         function renderDashboard() {
-            const total = state.demands.length;
+            // Contagem absoluta de todos os registos vinculados a fluxos (sem filtros de integridade que possam ocultar dados)
+            const allItems = state.demands.filter(d => !!d.activeFlow);
+            const totalCount = allItems.length;
+            
             const counts = {
-                total,
-                concluido: state.demands.filter(d => getStatusStandard(d.status) === 'Concluído').length,
-                andamento: state.demands.filter(d => getStatusStandard(d.status) === 'Em Andamento').length,
-                bloqueado: state.demands.filter(d => getStatusStandard(d.status) === 'Bloqueado').length
+                total: totalCount,
+                concluido: allItems.filter(d => getStatusStandard(d.status) === 'Concluído').length,
+                andamento: allItems.filter(d => getStatusStandard(d.status) === 'Em andamento').length,
+                bloqueado: allItems.filter(d => getStatusStandard(d.status) === 'Bloqueado').length
             };
             
             const mapping = {
@@ -640,14 +645,14 @@
             const summaryCont = document.getElementById('status-summary-container');
             if(summaryCont) {
                 summaryCont.innerHTML = '';
-                globalStatusOptions.forEach(status => {
-                    const count = state.demands.filter(d => getStatusStandard(d.status) === status).length;
-                    const perc = total > 0 ? Math.round((count / total) * 100) : 0;
-                    const color = getStatusInfo(status);
+                globalStatusOptions.forEach(statusName => {
+                    const count = allItems.filter(d => getStatusStandard(d.status) === statusName).length;
+                    const perc = totalCount > 0 ? Math.round((count / totalCount) * 100) : 0;
+                    const color = getStatusInfo(statusName);
                     summaryCont.insertAdjacentHTML('beforeend', `
                         <div class="flex flex-col space-y-1.5 border-r border-slate-50 last:border-0 pr-4">
                             <div class="flex justify-between items-center mb-1">
-                                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">${status}</span>
+                                <span class="text-[9px] font-black uppercase tracking-widest text-slate-400">${statusName}</span>
                                 <span class="text-[10px] font-black ${color.text}">${perc}%</span>
                             </div>
                             <div class="text-xl font-extrabold text-slate-900">${count}</div>
@@ -662,27 +667,29 @@
             const flowCont = document.getElementById('flow-analytics-container');
             if(flowCont) {
                 flowCont.innerHTML = '';
-                Object.keys(flowSchemas).forEach(flow => {
-                    const flowData = state.demands.filter(d => d.activeFlow === flow);
-                    const flowTotal = flowData.length;
-                    const flowVal = flowData.filter(d => getStatusStandard(d.status) === 'Concluído').length;
-                    const flowPerc = flowTotal ? Math.round((flowVal / flowTotal) * 100) : 0;
+                Object.keys(flowSchemas).forEach(flowKey => {
+                    const currentFlowData = allItems.filter(d => d.activeFlow === flowKey);
+                    const flowTotal = currentFlowData.length;
                     let segments = '';
+                    
                     if(flowTotal > 0) {
-                        globalStatusOptions.forEach(st => {
-                            const sCount = flowData.filter(d => getStatusStandard(d.status) === st).length;
+                        globalStatusOptions.forEach(statusName => {
+                            const sCount = currentFlowData.filter(d => getStatusStandard(d.status) === statusName).length;
                             if(sCount > 0) {
                                 const sPerc = (sCount / flowTotal) * 100;
-                                const color = getStatusInfo(st);
-                                segments += `<div class="chart-segment ${color.bg}" style="width: ${sPerc}%">${sCount}</div>`;
+                                const color = getStatusInfo(statusName);
+                                segments += `<div class="chart-segment ${color.bg}" style="width: ${sPerc}%" title="${statusName}: ${sCount}">${sCount}</div>`;
                             }
                         });
                     } else {
                         segments = `<div class="w-full h-full flex items-center justify-center text-[9px] text-slate-300 font-bold italic">Sem dados</div>`;
                     }
+                    
+                    const flowPerc = flowTotal ? Math.round((currentFlowData.filter(d => getStatusStandard(d.status) === 'Concluído').length / flowTotal) * 100) : 0;
+
                     flowCont.insertAdjacentHTML('beforeend', `
                         <div class="chart-row">
-                            <span class="chart-label">${flow}</span>
+                            <span class="chart-label">${flowKey}</span>
                             <div class="chart-bar-container">${segments}</div>
                             <span class="chart-percentage">${flowPerc}%</span>
                         </div>
@@ -754,23 +761,14 @@
             }
         }
 
-        // --- DATABASE OPERATIONS ---
         async function startFirebase() {
             const alertEl = document.getElementById('local-alert');
             const syncInd = document.getElementById('sync-status');
             
             try {
                 if (!db || !auth) throw new Error("Firebase não inicializado");
-                
-                await signInAnonymously(auth).catch(err => {
-                   if (err.code === 'auth/configuration-not-found') {
-                       console.warn("Provedor Anónimo não activado no Firebase Console.");
-                   }
-                   throw err;
-                });
-                
+                await signInAnonymously(auth);
                 enableIndexedDbPersistence(db).catch(() => {});
-
                 onSnapshot(query(collection(db, 'artifacts', currentAppId, 'public', 'data', 'validations')), (snap) => {
                     state.demands = snap.docs.map(doc => ({ internalId: doc.id, ...doc.data() }));
                     renderAll();
@@ -843,10 +841,10 @@
             if(fieldId) fieldId.value = d.internalId;
             renderFormFields(d.activeFlow, d);
             const mTitle = document.getElementById('modal-title-label');
-            if(mTitle) mTitle.innerText = 'Editar Registro';
             const mFlow = document.getElementById('modal-flow-label');
-            if(mFlow) mFlow.textContent = d.activeFlow;
             const mCont = document.getElementById('modal-form-container');
+            if(mTitle) mTitle.innerText = 'Editar Registro';
+            if(mFlow) mFlow.textContent = d.activeFlow;
             if(mCont) mCont.classList.remove('hidden');
         }
 
@@ -859,7 +857,7 @@
             uniqueSections.forEach(sk => {
                 cont.insertAdjacentHTML('beforeend', `<div class="col-span-12 py-1 border-b border-slate-50 mt-2 mb-1"><span class="text-[9px] font-black text-slate-700 uppercase tracking-widest">${sectionsMap[sk]?.title || 'CAMPOS'}</span></div>`);
                 schema.filter(f => f.sec === sk).forEach(fd => {
-                    let rawVal = data[fd.id] || (fd.id === 'status' ? 'Não Iniciado' : (fd.id === 'fluxo' ? state.activeFlow : ''));
+                    let rawVal = data[fd.id] || (fd.id === 'status' ? 'Não iniciado' : (fd.id === 'fluxo' ? state.activeFlow : ''));
                     let val = rawVal;
                     if (fd.id === 'status') val = getStatusStandard(rawVal);
                     if (fd.type === 'date') val = formatDateForInput(rawVal);
@@ -897,7 +895,6 @@
             return bom + csvRows.join("\n");
         }
 
-        // --- INICIALIZAÇÃO ---
         window.addEventListener('DOMContentLoaded', async () => {
             loadStorage();
             await startFirebase();
@@ -920,6 +917,15 @@
             });
             bindClick('btn-bulk-delete', () => performDelete(state.selectedIds));
             
+            bindClick('btn-clear-flow', async () => {
+                const count = state.demands.filter(d => d.activeFlow === state.activeFlow).length;
+                if (count === 0) return;
+                if (confirm(`Atenção: Deseja eliminar permanentemente os ${count} registos do fluxo "${state.activeFlow}"?`)) {
+                    const ids = state.demands.filter(d => d.activeFlow === state.activeFlow).map(d => d.internalId);
+                    await performDelete(ids);
+                }
+            });
+
             const searchF = document.getElementById('filter-search');
             if (searchF) searchF.oninput = renderTable;
             const statusF = document.getElementById('filter-status');
@@ -956,10 +962,10 @@
                 if(fieldId) fieldId.value = '';
                 renderFormFields(state.activeFlow, { fluxo: state.activeFlow });
                 const mTitle = document.getElementById('modal-title-label');
-                if(mTitle) mTitle.innerText = 'Nova Entrada';
                 const mFlow = document.getElementById('modal-flow-label');
-                if(mFlow) mFlow.textContent = state.activeFlow;
                 const mCont = document.getElementById('modal-form-container');
+                if(mTitle) mTitle.innerText = 'Nova Entrada';
+                if(mFlow) mFlow.textContent = state.activeFlow;
                 if(mCont) mCont.classList.remove('hidden');
             });
 
@@ -1035,7 +1041,8 @@
                         const content = ev.target.result;
                         const rows = content.split(/\r?\n/);
                         if(rows.length < 2) return;
-                        const delimiter = rows[0].includes(';') ? ';' : ',';
+                        const headerLine = rows[0];
+                        let delimiter = headerLine.includes(';') ? ';' : headerLine.includes('\t') ? '\t' : ',';
                         const schema = flowSchemas[state.activeFlow];
                         for (let i = 1; i < rows.length; i++) {
                             const line = rows[i].trim();
