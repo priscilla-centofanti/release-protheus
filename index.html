@@ -119,11 +119,11 @@
 <body class="h-screen flex flex-col overflow-hidden">
 
     <div id="local-alert">
-        <i class="fas fa-info-circle mr-2"></i> MODO LOCAL: A sincronização falhou ou não está configurada. Os dados estão guardados no browser.
+        <i class="fas fa-info-circle mr-2"></i> LIGAÇÃO INTERROMPIDA: A sincronização falhou. Verifique as suas configurações do Firebase.
     </div>
 
     <div id="sync-status">
-        <i class="fas fa-sync fa-spin mr-2"></i> A PROCESSAR...
+        <i class="fas fa-sync fa-spin mr-2"></i> SINCRONIZANDO...
     </div>
 
     <!-- Cabeçalho -->
@@ -233,7 +233,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
                     <div class="flex items-center space-x-4">
                         <h2 class="text-xl font-black text-slate-800 tracking-tight" id="flow-title">Nome do Fluxo</h2>
-                        <button id="btn-clear-flow" title="Limpar todos os registos deste fluxo" class="text-slate-300 hover:text-rose-500 transition-colors">
+                        <button id="btn-clear-flow" title="Limpar todos os registos deste fluxo" class="text-slate-300 hover:text-danger transition-colors">
                             <i class="fas fa-broom"></i>
                         </button>
                     </div>
@@ -264,6 +264,8 @@
                                 <option value="100">100</option>
                                 <option value="200">200</option>
                                 <option value="500">500</option>
+                                <option value="1000">1000</option>
+                                <option value="5000">5000</option>
                             </select>
                         </div>
 
@@ -328,7 +330,7 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- CONFIGURAÇÃO ---
+        // --- CONFIGURAÇÃO FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAYpZqV0SGCCy-3EqQhsOWwxFZkEOYm1W8",
             authDomain: "release-protheus.firebaseapp.com",
@@ -435,7 +437,6 @@
                 { id: 'passoRotina', label: 'Passo - Rotina', type: 'text', col: 12, required: true, sec: 'exec' },
                 { id: 'status', label: 'Status', type: 'select', options: globalStatusOptions, col: 6, sec: 'contr' },
                 { id: 'evidencia', label: 'Evidência', type: 'text', col: 6, sec: 'contr' },
-                { id: 'pedidos', label: 'Pedidos', type: 'text', col: 12, sec: 'contr' },
                 { id: 'inicio', label: 'Início', type: 'date', col: 6, sec: 'cron' },
                 { id: 'fim', label: 'Fim', type: 'date', col: 6, sec: 'cron' },
                 { id: 'responsible', label: 'Responsável', type: 'text', col: 6, required: true, sec: 'contr' },
@@ -524,12 +525,12 @@
 
         // --- HELPERS DE STATUS E FLUXO ---
         function getFlowName(d) {
-            // Verifica tanto activeFlow como fluxo para garantir compatibilidade com dados antigos/importados
-            return (d.activeFlow || d.fluxo || '').trim();
+            // Extremamente tolerante para capturar o fluxo de qualquer campo possível
+            return (d.activeFlow || d.fluxo || d['Passos - Fluxo Fiscal'] || d['Passos - Fluxo Contábil'] || '').toString().trim();
         }
 
         function getStatusStandard(status) {
-            const s = (status || '').toLowerCase().trim();
+            const s = (status || '').toString().toLowerCase().trim();
             if (s.includes('não iniciado') || s.includes('nao iniciado') || s === "") return 'Não iniciado';
             if (s.includes('em andamento') || s.includes('andamento')) return 'Em andamento';
             if (s.includes('concluido') || s.includes('concluído')) return 'Concluído';
@@ -571,6 +572,7 @@
         function getFilteredDemands() {
             const search = document.getElementById('filter-search')?.value.toLowerCase() || "";
             const statusFilt = document.getElementById('filter-status')?.value || "";
+            // Filtro por Fluxo (Comparação de strings minúsculas para segurança)
             return state.demands.filter(d => {
                 const fName = getFlowName(d);
                 if (!fName || fName.toLowerCase() !== state.activeFlow.toLowerCase()) return false;
@@ -623,7 +625,7 @@
         }
 
         function renderDashboard() {
-            // Contagem absoluta de todos os registos vinculados a fluxos
+            // Contagem bruta de todos os registros (SEM FILTRO DE INTEGRIDADE PARA NÃO PERDER DADOS)
             const allItems = state.demands.filter(d => !!getFlowName(d));
             const totalCount = allItems.length;
             
@@ -634,17 +636,10 @@
                 bloqueado: allItems.filter(d => getStatusStandard(d.status) === 'Bloqueado').length
             };
             
-            const mapping = {
-                'stat-total': counts.total,
-                'stat-validado': counts.concluido,
-                'stat-andamento': counts.andamento,
-                'stat-bloqueado': counts.bloqueado
-            };
-
-            for(let id in mapping) {
-                const el = document.getElementById(id);
-                if(el) el.innerText = mapping[id];
-            }
+            document.getElementById('stat-total').innerText = counts.total;
+            document.getElementById('stat-validado').innerText = counts.concluido;
+            document.getElementById('stat-andamento').innerText = counts.andamento;
+            document.getElementById('stat-bloqueado').innerText = counts.bloqueado;
 
             const summaryCont = document.getElementById('status-summary-container');
             if(summaryCont) {
@@ -711,8 +706,8 @@
                 tbody.innerHTML = paginated.length ? paginated.map(d => {
                     const clr = getStatusInfo(d.status);
                     const isChecked = state.selectedIds.includes(d.internalId);
-                    const evidenciaContent = (d.evidencia && d.evidencia.trim() !== "") 
-                        ? `<a href="${d.evidencia.startsWith('http') ? d.evidencia : 'http://' + d.evidencia}" target="_blank" class="text-blue-600 font-bold hover:underline flex items-center">
+                    const evidenciaContent = (d.evidencia && d.evidencia.toString().trim() !== "") 
+                        ? `<a href="${d.evidencia.toString().startsWith('http') ? d.evidencia : 'http://' + d.evidencia}" target="_blank" class="text-blue-600 font-bold hover:underline flex items-center">
                              <i class="fas fa-external-link-alt mr-1.5 text-[10px]"></i> Abrir
                            </a>`
                         : `<span class="text-slate-300 italic">Pendente</span>`;
@@ -732,7 +727,7 @@
                             </div>
                         </td>
                     </tr>`;
-                }).join('') : '<tr><td colspan="7" class="text-center py-20 text-slate-300 font-bold text-[10px]">Sem dados</td></tr>';
+                }).join('') : '<tr><td colspan="7" class="text-center py-20 text-slate-300 font-bold text-[10px]">Sem dados encontrados neste fluxo</td></tr>';
 
                 tbody.querySelectorAll('.btn-edit-rec').forEach(b => b.onclick = () => editRecord(b.dataset.id));
                 tbody.querySelectorAll('.btn-delete-rec').forEach(b => b.onclick = () => performDelete([b.dataset.id]));
@@ -922,10 +917,10 @@
             bindClick('btn-bulk-delete', () => performDelete(state.selectedIds));
             
             bindClick('btn-clear-flow', async () => {
-                const count = state.demands.filter(d => getFlowName(d).toLowerCase() === state.activeFlow.toLowerCase()).length;
-                if (count === 0) return;
-                if (confirm(`Atenção: Deseja eliminar permanentemente os ${count} registos do fluxo "${state.activeFlow}"?`)) {
-                    const ids = state.demands.filter(d => getFlowName(d).toLowerCase() === state.activeFlow.toLowerCase()).map(d => d.internalId);
+                const flowItems = state.demands.filter(d => getFlowName(d).toLowerCase() === state.activeFlow.toLowerCase());
+                if (flowItems.length === 0) return;
+                if (confirm(`Atenção: Deseja eliminar permanentemente os ${flowItems.length} registos do fluxo "${state.activeFlow}"?`)) {
+                    const ids = flowItems.map(d => d.internalId);
                     await performDelete(ids);
                 }
             });
@@ -1021,7 +1016,7 @@
                         let val = d[f.id] || "";
                         if (f.id === 'status') val = getStatusStandard(val);
                         if (f.type === 'date' && val) {
-                            const dParts = val.split('-');
+                            const dParts = val.toString().split('-');
                             if (dParts.length === 3) val = `${dParts[2]}/${dParts[1]}/${dParts[0]}`;
                         }
                         row[f.label] = val; 
@@ -1048,11 +1043,13 @@
                         const headerLine = rows[0];
                         let delimiter = headerLine.includes(';') ? ';' : headerLine.includes('\t') ? '\t' : ',';
                         const schema = flowSchemas[state.activeFlow];
+                        const currentFlowName = state.activeFlow;
+
                         for (let i = 1; i < rows.length; i++) {
                             const line = rows[i].trim();
                             if(!line) continue;
                             const cleanCols = parseCSVLine(line, delimiter);
-                            const record = { activeFlow: state.activeFlow, updatedAt: new Date().toISOString() };
+                            const record = { activeFlow: currentFlowName, updatedAt: new Date().toISOString() };
                             schema.forEach((f, idx) => { 
                                 let val = cleanCols[idx] || '';
                                 if (f.id === 'status') val = getStatusStandard(val);
