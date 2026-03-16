@@ -31,7 +31,7 @@
             font-size: 12px;
         }
 
-        /* --- Sidebar Star Admin Pro --- */
+        /* --- Sidebar Estilo Pro --- */
         .sidebar {
             width: 240px;
             background: var(--sidebar-bg);
@@ -60,7 +60,7 @@
 
         .nav-category { padding: 25px 25px 8px; font-size: 9px; font-weight: 800; color: #B2B2B2; text-transform: uppercase; letter-spacing: 1.5px; }
 
-        /* --- Pro Elements --- */
+        /* --- Elementos Pro --- */
         .pro-card { background: #FFFFFF; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--card-shadow); padding: 20px; }
         .stat-value { font-size: 22px; font-weight: 800; color: #000000; letter-spacing: -0.5px; line-height: 1.2; }
         .stat-desc { font-size: 10px; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
@@ -78,7 +78,7 @@
 
         .badge-pill { padding: 4px 10px; border-radius: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; display: inline-block; }
         
-        /* Cores de Status */
+        /* Cores de Status Atualizadas */
         .st-concluido { background-color: #E8F5E9; color: #2E7D32; } /* Verde */
         .st-andamento { background-color: #FFF3E0; color: #E65100; } /* Laranja */
         .st-naoiniciado { background-color: #F5F5F5; color: #757575; } /* Cinza */
@@ -119,17 +119,16 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
-    <!-- COMENTADO CONFORME SOLICITADO: Aviso de Modo Local
-    <div id="local-alert" style="display: block;">
-        <i class="fas fa-info-circle mr-2"></i> MODO LOCAL ATIVO: Sincronização Cloud comentada conforme solicitado. Os dados estão a ser guardados no seu browser.
+    <!-- Alerta de Modo Local oculto, aparece se o Firebase falhar -->
+    <div id="local-alert">
+        <i class="fas fa-info-circle mr-2"></i> MODO LOCAL: A sincronização falhou ou não está configurada. Os dados estão guardados no browser.
     </div>
-    -->
 
     <div id="sync-status">
-        <i class="fas fa-sync fa-spin mr-2"></i> A PROCESSAR...
+        <i class="fas fa-sync fa-spin mr-2"></i> SINCRONIZANDO...
     </div>
 
-    <!-- Header -->
+    <!-- Cabeçalho -->
     <header class="h-[65px] bg-white border-b border-[#F0F0F0] flex items-center justify-between px-8 z-50 flex-shrink-0">
         <div class="flex items-center space-x-10">
             <div class="flex items-center space-x-3 cursor-pointer group" id="btn-header-home">
@@ -173,10 +172,10 @@
             </nav>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Conteúdo Principal -->
         <main class="flex-1 overflow-y-auto p-6 lg:p-10 bg-[#F4F5F7]">
             
-            <!-- Dashboard Section -->
+            <!-- Secção Dashboard -->
             <section id="section-dashboard" class="space-y-8 max-w-7xl mx-auto animate-fade-in">
                 <div>
                     <h2 class="text-xl font-black text-slate-900 tracking-tight">Status do Ciclo</h2>
@@ -229,7 +228,7 @@
                 </div>
             </section>
 
-            <!-- Table Section -->
+            <!-- Secção Tabela -->
             <section id="section-demands" class="hidden max-w-full animate-fade-in">
                 <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
                     <div>
@@ -323,14 +322,39 @@
     <input type="file" id="csv-file-input" accept=".csv" class="hidden">
 
     <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, deleteDoc, onSnapshot, query, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYpZqV0SGCCy-3EqQhsOWwxFZkEOYm1W8",
+            authDomain: "release-protheus.firebaseapp.com",
+            projectId: "release-protheus",
+            storageBucket: "release-protheus.firebasestorage.app",
+            messagingSenderId: "268499559643",
+            appId: "1:268499559643:web:f7a56fbbc6b618a10c18fe"
+        };
+
+        const currentAppId = 'release-protheus';
         const STORAGE_KEY = 'integrados_release_pro_local_backup';
+        // Token UID fornecido
+        const MANUAL_UID = "g6Cmhj5X36W0WyBgJwoScIiUKaE3";
+
+        // Inicializa serviços
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch(e) { console.error("Erro na inicialização do Firebase", e); }
 
         // --- ESTADO ---
         let state = {
             demands: [],
             activeSection: 'dashboard',
             activeFlow: null,
-            user: { uid: 'local-user' },
+            user: null,
             dbInitialized: false, 
             selectedIds: [],
             perPage: 10
@@ -466,7 +490,7 @@
             renderAll();
         }
 
-        // --- STATUS HELPERS ---
+        // --- HELPERS ---
         function getStatusStandard(status) {
             const s = (status || '').toLowerCase().trim();
             if (s.includes('não iniciado') || s.includes('nao iniciado')) return 'Não Iniciado';
@@ -488,7 +512,6 @@
             }
         }
 
-        // --- DATE NORMALIZER ---
         function formatDateForInput(dateStr) {
             if (!dateStr) return '';
             try {
@@ -511,11 +534,9 @@
             } catch (e) { return ''; }
         }
 
-        // --- UI HELPERS ---
         function getFilteredDemands() {
             const search = document.getElementById('filter-search')?.value.toLowerCase() || "";
             const statusFilt = document.getElementById('filter-status')?.value || "";
-            
             return state.demands.filter(d => {
                 const matchFlow = d.activeFlow === state.activeFlow;
                 const matchSearch = (`${d.idCenario} ${d.scenario} ${d.responsible}`).toLowerCase().includes(search);
@@ -524,6 +545,7 @@
             });
         }
 
+        // --- UI CORE ---
         function updateUI() {
             const dashboard = document.getElementById('section-dashboard');
             const demands = document.getElementById('section-demands');
@@ -535,21 +557,25 @@
                 const btn = document.querySelector(`[data-flow="${state.activeFlow}"]`);
                 if(btn) btn.classList.add('active');
             } else {
-                document.getElementById('nav-dash-link')?.classList.add('active');
+                const dashLink = document.getElementById('nav-dash-link');
+                if(dashLink) dashLink.classList.add('active');
             }
 
+            const hTitle = document.getElementById('header-title');
+            const hSub = document.getElementById('header-subtitle');
+            const fTitle = document.getElementById('flow-title');
+
             if(state.activeSection === 'demands') {
-                const fTitleEl = document.getElementById('flow-title');
-                if(fTitleEl) fTitleEl.textContent = state.activeFlow;
-                document.getElementById('header-title').textContent = 'Módulos';
-                document.getElementById('header-subtitle').textContent = state.activeFlow;
+                if(fTitle) fTitle.textContent = state.activeFlow;
+                if(hTitle) hTitle.textContent = 'Módulos';
+                if(hSub) hSub.textContent = state.activeFlow;
                 state.selectedIds = [];
                 const selectAll = document.getElementById('select-all-rows');
                 if(selectAll) selectAll.checked = false;
                 updateBulkButton();
             } else {
-                document.getElementById('header-title').textContent = 'Dashboard';
-                document.getElementById('header-subtitle').textContent = 'Visão Analítica';
+                if(hTitle) hTitle.textContent = 'Dashboard';
+                if(hSub) hSub.textContent = 'Visão Analítica';
             }
             renderAll();
         }
@@ -568,10 +594,17 @@
                 bloqueado: state.demands.filter(d => getStatusStandard(d.status) === 'Bloqueado').length
             };
             
-            document.getElementById('stat-total').innerText = counts.total;
-            document.getElementById('stat-validado').innerText = counts.concluido;
-            document.getElementById('stat-andamento').innerText = counts.andamento;
-            document.getElementById('stat-bloqueado').innerText = counts.bloqueado;
+            const mapping = {
+                'stat-total': counts.total,
+                'stat-validado': counts.concluido,
+                'stat-andamento': counts.andamento,
+                'stat-bloqueado': counts.bloqueado
+            };
+
+            for(let id in mapping) {
+                const el = document.getElementById(id);
+                if(el) el.innerText = mapping[id];
+            }
 
             const summaryCont = document.getElementById('status-summary-container');
             if(summaryCont) {
@@ -636,7 +669,6 @@
                 tbody.innerHTML = paginated.length ? paginated.map(d => {
                     const clr = getStatusInfo(d.status);
                     const isChecked = state.selectedIds.includes(d.internalId);
-                    
                     const evidenciaContent = (d.evidencia && d.evidencia.trim() !== "") 
                         ? `<a href="${d.evidencia.startsWith('http') ? d.evidencia : 'http://' + d.evidencia}" target="_blank" class="text-blue-600 font-bold hover:underline flex items-center">
                              <i class="fas fa-external-link-alt mr-1.5 text-[10px]"></i> Abrir
@@ -691,20 +723,53 @@
             }
         }
 
+        // --- DATABASE OPERATIONS ---
+        async function startFirebase() {
+            const alertEl = document.getElementById('local-alert');
+            const syncInd = document.getElementById('sync-status');
+            
+            try {
+                if (!db || !auth) throw new Error("Firebase não inicializado");
+                
+                // Tentativa de Autenticação Anónima por defeito
+                await signInAnonymously(auth);
+                
+                enableIndexedDbPersistence(db).catch(() => {});
+
+                onSnapshot(query(collection(db, 'artifacts', currentAppId, 'public', 'data', 'validations')), (snap) => {
+                    state.demands = snap.docs.map(doc => ({ internalId: doc.id, ...doc.data() }));
+                    renderAll();
+                    if(syncInd) syncInd.style.display = 'none';
+                    if(alertEl) alertEl.style.display = 'none';
+                }, (err) => {
+                    console.error("Firestore Error:", err);
+                    if(alertEl) alertEl.style.display = 'block';
+                });
+                state.dbInitialized = true;
+            } catch (e) {
+                console.error("Firebase Start Fail:", e);
+                if(alertEl) alertEl.style.display = 'block';
+                if(syncInd) syncInd.style.display = 'none';
+            }
+        }
+
         async function saveRecord(data) {
             const sync = document.getElementById('sync-status');
             if(sync) sync.style.display = 'flex';
             const docId = data.internalId || crypto.randomUUID();
-            
-            if(data.status) {
-                data.status = getStatusStandard(data.status);
-            }
-
+            if(data.status) data.status = getStatusStandard(data.status);
             const payload = { ...data }; delete payload.internalId;
-            const idx = state.demands.findIndex(x => x.internalId === docId);
-            const full = { internalId: docId, ...payload };
-            if(idx !== -1) state.demands[idx] = full; else state.demands.push(full);
-            saveStorage();
+            
+            if (state.dbInitialized && auth && auth.currentUser) {
+                try {
+                    await setDoc(doc(db, 'artifacts', currentAppId, 'public', 'data', 'validations', docId), payload);
+                } catch(e) { console.error(e); }
+            } else {
+                const idx = state.demands.findIndex(x => x.internalId === docId);
+                const full = { internalId: docId, ...payload };
+                if(idx !== -1) state.demands[idx] = full; else state.demands.push(full);
+                saveStorage();
+            }
             if(sync) sync.style.display = 'none';
         }
 
@@ -716,12 +781,20 @@
             const sync = document.getElementById('sync-status');
             if(sync) sync.style.display = 'flex';
 
+            // Delete Optimista Local
             state.demands = state.demands.filter(d => !idList.includes(d.internalId));
             state.selectedIds = state.selectedIds.filter(id => !idList.includes(id));
             
+            for(const id of idList) {
+                if (state.dbInitialized && auth && auth.currentUser) {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', currentAppId, 'public', 'data', 'validations', id));
+                    } catch(e) { console.error(e); }
+                }
+            }
+            
             saveStorage();
             updateBulkButton();
-
             if(idList.length > 1) {
                  const selectAll = document.getElementById('select-all-rows');
                  if(selectAll) selectAll.checked = false;
@@ -732,11 +805,15 @@
         function editRecord(id) {
             const d = state.demands.find(x => x.internalId === id);
             if(!d) return;
-            document.getElementById('field-internal-id').value = d.internalId;
+            const fieldId = document.getElementById('field-internal-id');
+            if(fieldId) fieldId.value = d.internalId;
             renderFormFields(d.activeFlow, d);
-            document.getElementById('modal-title-label').innerText = 'Editar Registro';
-            document.getElementById('modal-flow-label').textContent = d.activeFlow;
-            document.getElementById('modal-form-container')?.classList.remove('hidden');
+            const mTitle = document.getElementById('modal-title-label');
+            if(mTitle) mTitle.innerText = 'Editar Registro';
+            const mFlow = document.getElementById('modal-flow-label');
+            if(mFlow) mFlow.textContent = d.activeFlow;
+            const mCont = document.getElementById('modal-form-container');
+            if(mCont) mCont.classList.remove('hidden');
         }
 
         function renderFormFields(flow, data = {}) {
@@ -750,24 +827,22 @@
                 schema.filter(f => f.sec === sk).forEach(fd => {
                     let rawVal = data[fd.id] || (fd.id === 'status' ? 'Não Iniciado' : (fd.id === 'fluxo' ? state.activeFlow : ''));
                     let val = rawVal;
-                    
                     if (fd.id === 'status') val = getStatusStandard(rawVal);
                     if (fd.type === 'date') val = formatDateForInput(rawVal);
-
                     const input = fd.type === 'select' ? `<select id="fld-${fd.id}" class="form-control font-semibold">${fd.options.map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('')}</select>` : fd.type === 'textarea' ? `<textarea id="fld-${fd.id}" rows="2" class="form-control !h-auto">${val}</textarea>` : `<input type="${fd.type}" id="fld-${fd.id}" value="${val}" class="form-control font-semibold">`;
                     cont.insertAdjacentHTML('beforeend', `<div class="col-span-12 md:col-span-${fd.col}"><label class="form-label">${fd.label}</label>${input}</div>`);
                 });
             });
         }
 
+        // --- MOTOR CSV ---
         function parseCSVLine(line, delimiter) {
             const result = [];
             let start = 0;
             let inQuotes = false;
             for (let i = 0; i < line.length; i++) {
-                if (line[i] === '"') {
-                    inQuotes = !inQuotes;
-                } else if (line[i] === delimiter && !inQuotes) {
+                if (line[i] === '"') { inQuotes = !inQuotes; } 
+                else if (line[i] === delimiter && !inQuotes) {
                     result.push(line.substring(start, i).replace(/^"|"$/g, '').replace(/""/g, '"'));
                     start = i + 1;
                 }
@@ -789,8 +864,10 @@
             return bom + csvRows.join("\n");
         }
 
+        // --- INIT ---
         window.addEventListener('DOMContentLoaded', async () => {
             loadStorage();
+            await startFirebase();
             updateUI();
 
             const bindClick = (id, fn) => {
@@ -800,21 +877,23 @@
 
             bindClick('btn-header-home', () => { state.activeSection = 'dashboard'; state.activeFlow = null; updateUI(); });
             bindClick('nav-dash-link', () => { state.activeSection = 'dashboard'; state.activeFlow = null; updateUI(); });
-            bindClick('btn-close-modal', () => document.getElementById('modal-form-container')?.classList.add('hidden'));
-            bindClick('btn-cancel-modal', () => document.getElementById('modal-form-container')?.classList.add('hidden'));
+            bindClick('btn-close-modal', () => {
+                const modal = document.getElementById('modal-form-container');
+                if(modal) modal.classList.add('hidden');
+            });
+            bindClick('btn-cancel-modal', () => {
+                const modal = document.getElementById('modal-form-container');
+                if(modal) modal.classList.add('hidden');
+            });
             bindClick('btn-bulk-delete', () => performDelete(state.selectedIds));
             
             const searchF = document.getElementById('filter-search');
             if (searchF) searchF.oninput = renderTable;
             const statusF = document.getElementById('filter-status');
             if (statusF) statusF.onchange = renderTable;
-
             const limitF = document.getElementById('filter-limit');
             if (limitF) {
-                limitF.onchange = (e) => {
-                    state.perPage = parseInt(e.target.value);
-                    renderTable();
-                };
+                limitF.onchange = (e) => { state.perPage = parseInt(e.target.value); renderTable(); };
             }
 
             const selectAll = document.getElementById('select-all-rows');
@@ -838,29 +917,34 @@
             });
 
             bindClick('btn-new-item', () => {
-                document.getElementById('record-form')?.reset();
+                const form = document.getElementById('record-form');
+                if(form) form.reset();
                 const fieldId = document.getElementById('field-internal-id');
                 if(fieldId) fieldId.value = '';
                 renderFormFields(state.activeFlow, { fluxo: state.activeFlow });
-                document.getElementById('modal-title-label').innerText = 'Nova Entrada';
-                document.getElementById('modal-flow-label').textContent = state.activeFlow;
-                document.getElementById('modal-form-container')?.classList.remove('hidden');
+                const mTitle = document.getElementById('modal-title-label');
+                if(mTitle) mTitle.innerText = 'Nova Entrada';
+                const mFlow = document.getElementById('modal-flow-label');
+                if(mFlow) mFlow.textContent = state.activeFlow;
+                const mCont = document.getElementById('modal-form-container');
+                if(mCont) mCont.classList.remove('hidden');
             });
 
             const recForm = document.getElementById('record-form');
             if (recForm) {
                 recForm.onsubmit = async (e) => {
                     e.preventDefault();
-                    const id = document.getElementById('field-internal-id').value;
-                    const flow = state.activeFlow || state.demands.find(x => x.internalId === id)?.activeFlow;
+                    const idVal = document.getElementById('field-internal-id').value;
+                    const flow = state.activeFlow || state.demands.find(x => x.internalId === idVal)?.activeFlow;
                     const schema = flowSchemas[flow];
-                    const data = { internalId: id || null, activeFlow: flow, updatedAt: new Date().toISOString() };
+                    const data = { internalId: idVal || null, activeFlow: flow, updatedAt: new Date().toISOString() };
                     schema.forEach(f => { 
                         const el = document.getElementById(`fld-${f.id}`); 
                         if(el) data[f.id] = el.value; 
                     });
                     await saveRecord(data);
-                    document.getElementById('modal-form-container')?.classList.add('hidden');
+                    const mCont = document.getElementById('modal-form-container');
+                    if(mCont) mCont.classList.add('hidden');
                 };
             }
 
@@ -918,21 +1002,18 @@
                         const content = ev.target.result;
                         const rows = content.split(/\r?\n/);
                         if(rows.length < 2) return;
-                        
                         const header = rows[0];
                         const delimiter = header.includes(';') ? ';' : ',';
                         const schema = flowSchemas[state.activeFlow];
-                        
                         for (let i = 1; i < rows.length; i++) {
                             const line = rows[i].trim();
                             if(!line) continue;
-                            
                             const cleanCols = parseCSVLine(line, delimiter);
                             const record = { activeFlow: state.activeFlow, updatedAt: new Date().toISOString() };
                             schema.forEach((f, idx) => { 
                                 let val = cleanCols[idx] || '';
                                 if (f.id === 'status') val = getStatusStandard(val);
-                                if (f.type === 'date' && val) val = formatDateForInput(val);
+                                if (f.type === 'date') val = formatDateForInput(val);
                                 record[f.id] = val; 
                             });
                             await saveRecord(record);
